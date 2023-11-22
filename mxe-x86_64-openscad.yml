@@ -1,72 +1,72 @@
 resource_types:
-- name: irc-notification
-  type: docker-image
-  source:
-    repository: flavorjones/irc-notification-resource
+  - name: irc-notification
+    type: docker-image
+    source:
+      repository: flavorjones/irc-notification-resource
 
 resources:
-- name: docker-openscad.git
-  type: git
-  icon: github
-  source:
-    uri: https://github.com/openscad/docker-openscad.git
-- name: libera-openscad-ci
-  type: irc-notification
-  source:
-    server: irc.libera.chat
-    port: 6697
-    join: true
-    channel: ((openscad-ci-bot-channel))
-    user: ((openscad-ci-bot-username))
-    password: ((openscad-ci-bot-password))
+  - name: docker-openscad.git
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/openscad/docker-openscad.git
+  - name: libera-openscad-ci
+    type: irc-notification
+    source:
+      server: irc.libera.chat
+      port: 6697
+      join: true
+      channel: ((openscad-ci-bot-channel))
+      user: ((openscad-ci-bot-username))
+      password: ((openscad-ci-bot-password))
 
-- name: mxe-x86_64-openscad
-  type: registry-image
-  icon: docker
-  source:
-    repository: openscad/mxe-x86_64-openscad
-    tag: latest
-    username: ((dockerhub-username))
-    password: ((dockerhub-password))
+  - name: mxe-x86_64-openscad
+    type: registry-image
+    icon: docker
+    source:
+      repository: openscad/mxe-x86_64-openscad
+      tag: latest
+      username: ((dockerhub-username))
+      password: ((dockerhub-password))
 
 jobs:
-- name: build
-  public: true
-  plan:
-    - put: libera-openscad-ci
+  - name: build
+    public: true
+    plan:
+      - put: libera-openscad-ci
+        params:
+          message: >
+            Starting ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
+      - get: docker-openscad.git
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              # Check out the README for oci-build-task at
+              # https://github.com/concourse/oci-build-task
+              repository: concourse/oci-build-task
+          inputs:
+            - name: docker-openscad.git
+          outputs:
+            - name: image
+          params:
+            CONTEXT: docker-openscad.git/mxe
+            DOCKERFILE: docker-openscad.git/mxe/mxe-x86_64-openscad/Dockerfile
+          run:
+            path: build
+      - put: mxe-x86_64-openscad
+        params:
+          image: image/image.tar
+    on_success:
+      put: libera-openscad-ci
       params:
         message: >
-          Starting ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
-    - get: docker-openscad.git
-    - task: build-image
-      privileged: true
-      config:
-        platform: linux
-        image_resource:
-          type: registry-image
-          source:
-            # Check out the README for oci-build-task at
-            # https://github.com/concourse/oci-build-task
-            repository: concourse/oci-build-task
-        inputs:
-        - name: docker-openscad.git
-        outputs:
-        - name: image
-        params:
-          CONTEXT: docker-openscad.git/mxe
-          DOCKERFILE: docker-openscad.git/mxe/mxe-x86_64-openscad/Dockerfile
-        run:
-          path: build
-    - put: mxe-x86_64-openscad
+          Build successful ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
+    on_failure:
+      put: libera-openscad-ci
       params:
-        image: image/image.tar
-  on_success:
-    put: libera-openscad-ci
-    params:
-      message: >
-        Build successful ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
-  on_failure:
-    put: libera-openscad-ci
-    params:
-      message: >
-        Build failed ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
+        message: >
+          Build failed ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
