@@ -1,0 +1,42 @@
+resources:
+- name: docker-openscad.git
+  type: git
+  icon: github
+  source:
+    uri: https://github.com/openscad/docker-openscad.git
+
+- name: appimage-x86_64-base
+  type: registry-image
+  icon: docker
+  source:
+    repository: openscad/appimage-x86_64-base
+    tag: latest
+    username: ((dockerhub-username))
+    password: ((dockerhub-password))
+
+jobs:
+- name: build
+  public: true
+  plan:
+  - get: docker-openscad.git
+  - task: build-image
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          # Check out the README for oci-build-task at
+          # https://github.com/concourse/oci-build-task
+          repository: concourse/oci-build-task
+      inputs:
+      - name: docker-openscad.git
+      outputs:
+      - name: image
+      params:
+        CONTEXT: docker-openscad.git/appimage/appimage-x86_64-base
+      run:
+        path: build
+  - put: appimage-x86_64-base
+    params:
+      image: image/image.tar
