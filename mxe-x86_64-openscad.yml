@@ -19,7 +19,6 @@ resources:
       channel: ((openscad-ci-bot-channel))
       user: ((openscad-ci-bot-username))
       password: ((openscad-ci-bot-password))
-
   - name: mxe-x86_64-openscad
     type: registry-image
     icon: docker
@@ -38,6 +37,21 @@ jobs:
           message: >
             Starting ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
       - get: docker-openscad.git
+      - task: generate-tag-name
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: debian
+              tag: bookworm-slim
+          outputs:
+            - name: meta
+          run:
+            path: sh
+            args:
+              - -exc
+              - date '+%Y-%m-%d' > ./meta/tags
       - task: build-image
         privileged: true
         config:
@@ -59,6 +73,7 @@ jobs:
             path: build
       - put: mxe-x86_64-openscad
         params:
+          additional_tags: ./meta/tags
           image: image/image.tar
     on_success:
       put: libera-openscad-ci
