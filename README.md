@@ -6,6 +6,10 @@ https://ci.openscad.org/
 
 ## Commands
 
+### Login
+
+`./fly -t openscad login -c https://ci.openscad.org:8080/ -u openscad`
+
 ### Create a new team for grouping pipelines
 
 `./fly -t openscad set-team --team-name dockerhub --local-user openscad`
