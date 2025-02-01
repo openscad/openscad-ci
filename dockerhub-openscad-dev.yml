@@ -37,6 +37,7 @@ resources:
       password: ((dockerhub-password))
 
 jobs:
+  # https://blog.nono.io/post/multi-platform_docker_images_with_concourse/
   - name: build
     public: true
     plan:
@@ -69,8 +70,6 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              # Check out the README for oci-build-task at
-              # https://github.com/concourse/oci-build-task
               repository: concourse/oci-build-task
           inputs:
             - name: docker-openscad.git
@@ -79,12 +78,15 @@ jobs:
           params:
             CONTEXT: ./docker-openscad.git/openscad/bookworm/
             DOCKERFILE: ./docker-openscad.git/openscad/bookworm/Dockerfile
+            IMAGE_PLATFORM: linux/amd64,linux/arm64
+            OUTPUT_OCI: true
+            BUILD_ARG_JOBS: 2
           run:
             path: build
       - put: openscad-dev
         params:
           additional_tags: ./meta/tags
-          image: ./image/image.tar
+          image: ./image/image
     on_success:
       put: libera-openscad-ci
       params:
