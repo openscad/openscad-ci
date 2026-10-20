@@ -55,14 +55,17 @@ jobs:
             type: registry-image
             source:
               repository: debian
-              tag: bookworm-slim
+              tag: trixie-slim
           outputs:
             - name: meta
           run:
             path: sh
             args:
               - -exc
-              - date '+dev.%Y-%m-%d' > ./meta/tags
+              - |
+                echo "$(date '+dev.%Y-%m-%d') $(date '+trixie.%Y-%m-%d') trixie" > ./meta/tags
+                echo "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > ./meta/labels
+                echo "org.opencontainers.image.version=$(date -u +'%Y.%m.%d')" >> ./meta/labels
       - task: build-image
         privileged: true
         config:
@@ -73,12 +76,14 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: docker-openscad.git
+            - name: meta
           outputs:
             - name: image
           params:
-            CONTEXT: ./docker-openscad.git/openscad/bookworm/
-            DOCKERFILE: ./docker-openscad.git/openscad/bookworm/Dockerfile
-            IMAGE_PLATFORM: linux/amd64,linux/arm64
+            CONTEXT: ./docker-openscad.git/openscad/trixie/
+            DOCKERFILE: ./docker-openscad.git/openscad/trixie/Dockerfile
+            IMAGE_PLATFORM: linux/amd64,linux/arm64,linux/riscv64
+            LABELS_FILE: ./meta/labels
             OUTPUT_OCI: true
             BUILD_ARG_JOBS: 2
           run:
