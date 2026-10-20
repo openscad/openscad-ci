@@ -10,12 +10,12 @@ resources:
     icon: github
     source:
       uri: https://github.com/openscad/docker-openscad.git
-  - name: every-monday-at-5-am-utc
+  - name: every-wednesday-at-3-am-utc
     type: time
     source:
-      start: "5:00"
-      stop: "7:00"
-      days: [Monday]
+      start: "3:00"
+      stop: "5:00"
+      days: [Wednesday]
       location: UTC
   - name: libera-openscad-ci
     type: irc-notification
@@ -45,7 +45,7 @@ jobs:
         params:
           message: >
             Starting ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}: build ${BUILD_ID} ${BUILD_URL}
-      - get: every-monday-at-5-am-utc
+      - get: every-wednesday-at-3-am-utc
         trigger: true
       - get: docker-openscad.git
       - task: generate-tag-name
