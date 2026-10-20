@@ -45,7 +45,7 @@ jobs:
             type: registry-image
             source:
               repository: debian
-              tag: bookworm-slim
+              tag: trixie-slim
           outputs:
             - name: meta
           run:
